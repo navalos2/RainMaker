@@ -32,14 +32,9 @@ class Game extends Pane implements Updatable {
         Pond pond = new Pond();
 
         Helipad helipad = new Helipad();
-        //helipad.setTranslateX(GameApp.GAME_WIDTH / 2 - 50);
-        //helipad.setTranslateY(25);
-        helipad.myTranslate.setX(GameApp.GAME_WIDTH / 2 - 50);
-        helipad.myTranslate.setY(25);
 
-        Helicopter helicopter = new Helicopter();
-        helicopter.myTranslate.setX(helipad.myTranslate.getX());
-        helicopter.myTranslate.setY(helipad.myTranslate.getY());
+        Helicopter helicopter = new Helicopter(helipad.myTranslate.getX(),
+                helipad.myTranslate.getY());
 
         this.getChildren().clear();
         this.getChildren().addAll(cloud, pond, helipad, helicopter);
@@ -88,8 +83,8 @@ class GameObject extends Group {
 class Pond extends GameObject {
     public Pond() {
         Ellipse pond = new Ellipse();
-        pond.setRadiusX(30);
-        pond.setRadiusY(30);
+        pond.setRadiusX(20);
+        pond.setRadiusY(20);
         pond.setFill(Color.BLUE);
         pond.setTranslateX(new Random().nextDouble(GameApp.GAME_WIDTH));
         pond.setTranslateY(new Random().nextDouble(GameApp.GAME_HEIGHT) + 100);
@@ -101,8 +96,8 @@ class Cloud extends GameObject {
     public Cloud() {
         super();
         Ellipse cloud = new Ellipse();
-        cloud.setRadiusX(30);
-        cloud.setRadiusY(30);
+        cloud.setRadiusX(50);
+        cloud.setRadiusY(50);
         cloud.setFill(Color.WHITE);
         cloud.setTranslateX(new Random().nextDouble(GameApp.GAME_WIDTH));
         cloud.setTranslateY(new Random().nextDouble(GameApp.GAME_HEIGHT) + 100);
@@ -129,14 +124,19 @@ class Helipad extends GameObject {
         ellipse.setLayoutY(50);
         add(ellipse);
 
+        this.myTranslate.setX(GameApp.GAME_WIDTH/2 -50);
+        this.myTranslate.setY(25);
     }
+
 }
 
 class Helicopter extends GameObject {
-    public Helicopter() {
+    public Helicopter(double x, double y) {
         super();
         Circle body = new Circle(30, 30, 15);
         body.setFill(Color.YELLOW);
+        body.setTranslateX(x);
+        body.setTranslateY(y);
         add(body);
     }
 
