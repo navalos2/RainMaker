@@ -3,6 +3,8 @@ import javafx.application.Application;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -33,11 +35,21 @@ class Game extends Pane implements Updatable {
 
         Helipad helipad = new Helipad();
 
-        Helicopter helicopter = new Helicopter(helipad.myTranslate.getX(),
-                helipad.myTranslate.getY());
+        Helicopter helicopter = new Helicopter();
+
+        /*Helicopter helicopter = new Helicopter(helipad.myTranslate.getX(),
+                helipad.myTranslate.getY());*/
 
         this.getChildren().clear();
         this.getChildren().addAll(cloud, pond, helipad, helicopter);
+
+        AnimationTimer timer = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+
+            }
+        };
+        timer.start();
     }
 
     /* Initialize method that is invoked whenever a new game must be played.
@@ -86,8 +98,10 @@ class Pond extends GameObject {
         pond.setRadiusX(20);
         pond.setRadiusY(20);
         pond.setFill(Color.BLUE);
-        pond.setTranslateX(new Random().nextDouble(GameApp.GAME_WIDTH));
-        pond.setTranslateY(new Random().nextDouble(GameApp.GAME_HEIGHT) + 100);
+        pond.setTranslateX(300);
+        pond.setTranslateY(400);
+       /* pond.setTranslateX(new Random().nextDouble(GameApp.GAME_WIDTH));
+        pond.setTranslateY(new Random().nextDouble(GameApp.GAME_HEIGHT) + 100);*/
         add(pond);
     }
 }
@@ -99,8 +113,10 @@ class Cloud extends GameObject {
         cloud.setRadiusX(50);
         cloud.setRadiusY(50);
         cloud.setFill(Color.WHITE);
-        cloud.setTranslateX(new Random().nextDouble(GameApp.GAME_WIDTH));
-        cloud.setTranslateY(new Random().nextDouble(GameApp.GAME_HEIGHT) + 100);
+        cloud.setTranslateX(150);
+        cloud.setTranslateY(600);
+        /*cloud.setTranslateX(new Random().nextDouble(GameApp.GAME_WIDTH));
+        cloud.setTranslateY(new Random().nextDouble(GameApp.GAME_HEIGHT) + 100);*/
         add(cloud);
     }
 }
@@ -113,6 +129,8 @@ class Helipad extends GameObject {
         rectangle.setFill(Color.TRANSPARENT);
         rectangle.setStyle("-fx-stroke: grey; " +
                 "-fx-stroke-width: 2;");
+        rectangle.setTranslateX(150);
+        rectangle.setTranslateY(25);
         add(rectangle);
 
         Ellipse ellipse = new Ellipse();
@@ -120,26 +138,29 @@ class Helipad extends GameObject {
         ellipse.setRadiusY(40);
         ellipse.setFill(Color.TRANSPARENT);
         ellipse.setStyle("-fx-stroke: grey;" + "-fx-stroke-width: 2;");
-        ellipse.setLayoutX(GameApp.GAME_WIDTH / 2 - 150);
-        ellipse.setLayoutY(50);
+        ellipse.setTranslateX(200);
+        ellipse.setTranslateY(75);
         add(ellipse);
 
-        this.myTranslate.setX(GameApp.GAME_WIDTH/2 -50);
-        this.myTranslate.setY(25);
+        //this.myTranslate.setX(350);
+        //this.myTranslate.setY(25);
     }
 
 }
 
 class Helicopter extends GameObject {
-    public Helicopter(double x, double y) {
+    public Helicopter() {
         super();
         Circle body = new Circle(30, 30, 15);
         body.setFill(Color.YELLOW);
-        body.setTranslateX(x);
-        body.setTranslateY(y);
+        body.setTranslateX(170);
+        body.setTranslateY(45);
         add(body);
     }
 
+    public void update() {
+
+    }
 }
 
 class GameText extends GameObject {
@@ -158,6 +179,19 @@ public class GameApp extends Application {
         public static final int GAME_WIDTH = 400;
         public static final int GAME_HEIGHT = 800;
 
+        /* Set up KEY EVENTS */
+        private void keyPressed(KeyEvent evt) {
+
+            KeyCode key = evt.getCode();
+            System.out.println("Key Pressed: " + key);  // for testing
+
+            int heliVelocity = 2;
+            Helicopter helicopter = new Helicopter();
+
+            if (key == KeyCode.UP) {
+                helicopter.setTranslateY(helicopter.getTranslateY() + heliVelocity);
+            }
+        }
         @Override
         public void start(Stage primaryStage) throws Exception {
             Game root = new Game();
@@ -169,15 +203,12 @@ public class GameApp extends Application {
             primaryStage.setScene(scene);
             primaryStage.setTitle("Rain Maker - Nataly Avalos");
             scene.setFill(Color.BLACK);
+
+            scene.setOnKeyPressed(e -> keyPressed(e));
+
+
+
             primaryStage.show();
-
-            AnimationTimer timer = new AnimationTimer() {
-                @Override
-                public void handle(long now) {
-
-                }
-            };
-            timer.start();
         }
 
 }
