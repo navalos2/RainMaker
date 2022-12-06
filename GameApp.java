@@ -46,31 +46,20 @@ class Game extends Pane implements Updatable {
         AnimationTimer timer = new AnimationTimer() {
             @Override
             public void handle(long now) {
-
+                update();
             }
         };
         timer.start();
     }
 
-    /* Initialize method that is invoked whenever a new game must be played.
-       The init() method creates all of the new state of the world including
-       the positioning of each game objects.
-
-       DON'T FORGET to clear all children out of the Pane before initializing
-       new objects.
-     */
-    public void init() {
+    public void up() {
+        // using object helicopter
 
     }
-
-    /* In update() method, you will need to move your helicopter and check
-       the win/lose status of the game.
-     */
     @Override
     public void update() {
 
     }
-
 }
 
 /* GameObject class contains methods and fields that manage the common
@@ -148,7 +137,11 @@ class Helipad extends GameObject {
 
 }
 
-class Helicopter extends GameObject {
+class Helicopter extends GameObject implements Updatable{
+    boolean upPressed;
+    boolean leftPressed;
+    boolean rightPressed;
+
     public Helicopter() {
         super();
         Circle body = new Circle(30, 30, 15);
@@ -158,8 +151,15 @@ class Helicopter extends GameObject {
         add(body);
     }
 
-    public void update() {
+    public void increaseSpeed() {
+        // focus on implenting something that changes how fast the heli moves
 
+    }
+
+
+    @Override
+    public void update() {
+        // actually does the movement
     }
 }
 
@@ -179,17 +179,14 @@ public class GameApp extends Application {
         public static final int GAME_WIDTH = 400;
         public static final int GAME_HEIGHT = 800;
 
-        /* Set up KEY EVENTS */
-        private void keyPressed(KeyEvent evt) {
-
+        public void keyPressed(KeyEvent evt) {
             KeyCode key = evt.getCode();
             System.out.println("Key Pressed: " + key);  // for testing
 
-            int heliVelocity = 2;
-            Helicopter helicopter = new Helicopter();
 
             if (key == KeyCode.UP) {
-                helicopter.setTranslateY(helicopter.getTranslateY() + heliVelocity);
+                // call to a method (UP) in game
+
             }
         }
         @Override
@@ -203,9 +200,6 @@ public class GameApp extends Application {
             primaryStage.setScene(scene);
             primaryStage.setTitle("Rain Maker - Nataly Avalos");
             scene.setFill(Color.BLACK);
-
-            scene.setOnKeyPressed(e -> keyPressed(e));
-
 
 
             primaryStage.show();
