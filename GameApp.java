@@ -4,9 +4,9 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Line;
@@ -17,8 +17,6 @@ import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
 import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
-
-import java.security.Key;
 
 interface Updatable {
     void update();
@@ -72,6 +70,10 @@ class Game extends Pane implements Updatable {
     public void heliRight() {
         helicopter.turnRight();
     }
+
+    public void ignition() {
+        helicopter.ignition();
+    }
 }
 
 /* GameObject class contains methods and fields that manage the common
@@ -117,25 +119,44 @@ class GameObject extends Group {
 
 class Pond extends GameObject {
     public Pond() {
-        Ellipse pond = new Ellipse();
-        pond.setRadiusX(20);
-        pond.setRadiusY(20);
+        Circle pond = new Circle(40,40,20);
         pond.setFill(Color.BLUE);
         pond.setTranslateX(300);
         pond.setTranslateY(400);
         add(pond);
+
+        GameText pondPercent = new GameText("0%");
+        pondPercent.setTranslateX(pond.getTranslateX() + pond.getCenterX() - 5);
+        pondPercent.setTranslateY(pond.getTranslateY() + pond.getCenterY() + 5);
+        pondPercent.setFill(Color.WHITE);
+        add(pondPercent);
     }
 }
 
 class Cloud extends GameObject {
     public Cloud() {
         super();
-        Ellipse cloud = new Ellipse();
-        cloud.setRadiusX(50);
-        cloud.setRadiusY(50);
+        Circle cloud = new Circle(100,100,50);
         cloud.setFill(Color.WHITE);
-        cloud.setTranslateX(150);
-        cloud.setTranslateY(600);
+        cloud.setTranslateX(50);
+        cloud.setTranslateY(500);
+        add(cloud);
+
+        GameText cloudPercent = new GameText("0%");
+        cloudPercent.setTranslateX(cloud.getTranslateX() + cloud.getCenterX() - 5);
+        cloudPercent.setTranslateY(cloud.getTranslateY() + cloud.getCenterY() + 5);
+        cloudPercent.setFill(Color.BLUE);
+        add(cloudPercent);
+
+        Rectangle boundingBox = new Rectangle();
+        boundingBox.setWidth(100);
+        boundingBox.setHeight(100);
+        boundingBox.setFill(Color.TRANSPARENT);
+        boundingBox.setStyle("-fx-stroke: yellow; " +
+                "-fx-stroke-width: 0.5;");
+        boundingBox.setTranslateX(cloud.getTranslateX() + cloud.getCenterX() - 50);
+        boundingBox.setTranslateY(cloud.getTranslateY() + cloud.getCenterY() - 50);
+        add(boundingBox);
 
         /*double randomX = Math.random() * (GameApp.GAME_WIDTH - cloud.getRadiusX());
         double randomY =
@@ -143,7 +164,7 @@ class Cloud extends GameObject {
         cloud.setCenterX(randomX);
         cloud.setCenterY(randomY);*/
 
-        add(cloud);
+
     }
 }
 class Helipad extends GameObject {
@@ -168,6 +189,15 @@ class Helipad extends GameObject {
         ellipse.setTranslateY(75);
         add(ellipse);
 
+        Rectangle boundingBox = new Rectangle();
+        boundingBox.setWidth(100);
+        boundingBox.setHeight(100);
+        boundingBox.setFill(Color.TRANSPARENT);
+        boundingBox.setStyle("-fx-stroke: yellow; " +
+                "-fx-stroke-width: 0.5;");
+        boundingBox.setTranslateX(rectangle.getTranslateX() + rectangle.getWidth() - 100);
+        boundingBox.setTranslateY(rectangle.getTranslateY() + rectangle.getHeight() - 100);
+        add(boundingBox);
     }
 
 }
@@ -176,14 +206,15 @@ class Helicopter extends GameObject implements Updatable{
     double speed = 0;
     double maxSpeed = 10;
     int minSpeed = -2;
+    int heading = 0;
+    boolean ignition = false;
+    int fuel = 25000;
 
     public Helicopter() {
         super();
         Circle helicopter = new Circle(30, 30, 15);
         helicopter.setFill(Color.YELLOW);
-        //helicopter.setCenterX(200);
-        //helicopter.setCenterY(75);
-        this.translate(170, 50);
+        this.translate(170, 45);
         add(helicopter);
 
         Line heading = new Line();
@@ -194,43 +225,68 @@ class Helicopter extends GameObject implements Updatable{
         heading.setStroke(Color.YELLOW);
         add(heading);
 
+        GameText fuelText = new GameText("F:" + fuel);
+        fuelText.setTranslateX(10);
+        fuelText.setTranslateY(10);
+        fuelText.setFill(Color.YELLOW);
+        add(fuelText);
+
+        Rectangle boundingBox = new Rectangle();
+        boundingBox.setWidth(70);
+        boundingBox.setHeight(70);
+        boundingBox.setFill(Color.TRANSPARENT);
+        boundingBox.setStyle("-fx-stroke: yellow; " +
+                "-fx-stroke-width: 0.5;");
+        boundingBox.setTranslateX(-5);
+        boundingBox.setTranslateY(-5);
+        add(boundingBox);
 
         this.getTransforms().clear();
         this.getTransforms().addAll(myRotate, myTranslate);
     }
+    public void boundingBoxes() {
 
+    }
+    public void ignition() {
+        ignition =! ignition;
+    }
     public void up() {
-        // increases the speed
-        if (speed < maxSpeed){
+        // increases the speed by 0.1
+        if (ignition && speed < maxSpeed){
             speed += 0.1;
         }
     }
     public void down() {
-        // decreases the speed
-        if (speed > minSpeed){
+        // decreases the speed by 0.1
+        if (ignition && speed > minSpeed){
             speed -= 0.1;
         }
     }
-
     public void turnLeft() {
-
+        // changes the heading of the helicopter by 15 degrees left
+        if (ignition) {
+            heading += 15;
+        }
     }
-
     public void turnRight() {
-
+        // changes the heading of the helicopter by 15 degrees right
+        if (ignition) {
+            heading -= 15;
+        }
     }
 
     @Override
     public void update() {
-    // does the movement of the helicopter
-    //myTranslate.setY(myTranslate.getY() + Math.sin(Math.toRadians(myRotate
-        // .getAngle() * speed)));
-    //myTranslate.setX(myTranslate.getX() + Math.sin(Math.toRadians(myRotate
-        // .getAngle() * speed)));
-        this.translate(myTranslate.getX(), myTranslate.getY() + speed);
-    this.getTransforms().clear();
-    this.getTransforms().addAll(myRotate, myTranslate);
-    // updates the position of a helicopter
+        // does the movement of the helicopter
+
+        double deltaX = -speed * Math.sin(Math.toRadians(heading));
+        double deltaY = speed * Math.cos(Math.toRadians(heading));
+
+        this.translate(myTranslate.getX() + deltaX, myTranslate.getY() + deltaY);
+        this.rotate(heading);
+
+        this.getTransforms().clear();
+        this.getTransforms().addAll(myTranslate, myRotate);
     }
 }
 
@@ -242,6 +298,12 @@ class GameText extends GameObject {
         text.setScaleY(-1);
         text.setFont(Font.font(12));
         add(text);
+    }
+    public GameText() {this("");}
+    public void setText(String textString) {text.setText(textString);}
+
+    public void setFill(Color color) {
+        text.setFill(color);
     }
 }
 
@@ -274,6 +336,9 @@ public class GameApp extends Application {
                 }
                 if (e.getCode() == KeyCode.RIGHT){
                     root.heliRight();
+                }
+                if (e.getCode() == KeyCode.I){
+                    root.ignition();
                 }
         });
 
