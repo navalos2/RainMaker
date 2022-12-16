@@ -1,8 +1,11 @@
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -31,22 +34,34 @@ class Game extends Pane implements Updatable {
 
     Helicopter helicopter = new Helicopter();
 
+    AnimationTimer timer;
+
     int counter = 0;
 
-    public Game() {
+    StringBuilder msg = new StringBuilder();
+
+    Alert alert;
+
+    public Game() {init();}
+
+    public void init() {
 
         this.getChildren().clear();
         this.getChildren().addAll(cloud, pond, helipad, helicopter);
 
-        AnimationTimer timer = new AnimationTimer() {
+        timer = new AnimationTimer() {
             @Override
             public void handle(long now) {
                 if (counter++ %2 == 0) {
+                    // call each classes update method
                     helicopter.update();
                     cloud.update();
                     pond.update();
+                    winloseConditions();
 
-                    if(cloud.isSaturation30()) {
+                    // check to see if the cloud has reached 30% cloudSaturation.
+                    // if so, fill the pond
+                    if(cloud.isCloudSaturation30()) {
                         pond.fillPond();
                     }
                 }
@@ -58,6 +73,7 @@ class Game extends Pane implements Updatable {
     public void update() {
     }
 
+    // key event methods
     public void heliUp() {
         helicopter.up();
     }
@@ -83,10 +99,57 @@ class Game extends Pane implements Updatable {
         helicopter.showHeliBounding();
     }
 
+    public void resetGame() {
+        pond.resetPond();
+        cloud.resetCloud();
+        helicopter.resetHeli();
+        helipad.resetHelipad();
+        //this.getChildren().clear();
+
+        cloud = new Cloud();
+        pond = new Pond();
+        helicopter = new Helicopter();
+        helipad = new Helipad();
+
+        init();
+    }
+
+    // check to see if cloud and helicopter intersect (same as Pong/Asteroids)
     public void cloudSeeding() {
         if (!Shape.intersect(helicopter.getBounds(),
                 cloud.getBounds()).getBoundsInLocal().isEmpty()) {
             cloud.cloudSeeding();
+        }
+    }
+
+    // determines win/lose conditions
+    public void winloseWindow() {
+        alert = new Alert(Alert.AlertType.CONFIRMATION, msg.toString(),
+                ButtonType.YES, ButtonType.NO);
+
+        alert.setOnHidden(e -> {
+            if (alert.getResult() == ButtonType.YES) {
+                resetGame();
+                //timer.start();
+            } else
+                Platform.exit();
+        });
+        alert.show();
+    }
+
+    public void winloseConditions() {
+        if (pond.fill == 100) {
+            timer.stop();
+            msg.append("You Win! Play Again?");
+
+            winloseWindow();
+        }
+
+        if (helicopter.fuel == 0) {
+            timer.stop();
+            msg.append("You Lose! Play Again?");
+
+            winloseWindow();
         }
     }
 }
@@ -132,22 +195,22 @@ class GameObject extends Group {
     }
 }
 
+/* The following classes hold our objects on the scene. Pond class, Cloud
+class, Helipad class, Helicopter class */
 class Pond extends GameObject implements Updatable {
-
-    GameText pondPercent;
+    private GameText pondPercent;
     Circle pond;
-    int fill = 0;
+    int fill = 28;
     int radius = 20;
 
     public Pond() {
-
         pond = new Circle(40,40, radius);
         pond.setFill(Color.BLUE);
         pond.setTranslateX(300);
         pond.setTranslateY(400);
         add(pond);
 
-        pondPercent = new GameText("28%");
+        pondPercent = (new GameText("28%"));
         pondPercent.setTranslateX(pond.getTranslateX() + pond.getCenterX() - 5);
         pondPercent.setTranslateY(pond.getTranslateY() + pond.getCenterY() + 5);
         pondPercent.setFill(Color.WHITE);
@@ -165,6 +228,10 @@ class Pond extends GameObject implements Updatable {
         pondPercent.setText("%" + fill);
         pond.setRadius(radius);
     }
+
+    public void resetPond() {
+        this.getChildren().clear();
+    }
 }
 
 class Cloud extends GameObject implements Updatable{
@@ -172,18 +239,18 @@ class Cloud extends GameObject implements Updatable{
     Circle cloud = new Circle(100,100,50);
     GameText cloudPercent = new GameText("0%");
 
-    int saturation = 0;
-    int delayResaturation = 0;
+    int cloudSaturation = 0;
+    int delayDesaturation = 0;
     int r = 255;
     int g = 255;
     int b = 255;
-    boolean saturation30 = false;
+    boolean cloudSaturation30 = false;
 
     public Cloud() {
         super();
 
         cloud.setFill(Color.rgb(r,g,b));
-        cloud.setTranslateX(50);
+        cloud.setTranslateX(5);
         cloud.setTranslateY(500);
         add(cloud);
 
@@ -212,32 +279,38 @@ class Cloud extends GameObject implements Updatable{
 
     public Shape getBounds() { return boundingBox; }
 
-    boolean isSaturation30() {
-        return saturation30;
+    boolean isCloudSaturation30() {
+        return cloudSaturation30;
     }
 
     public void cloudSeeding() {
-        if (saturation <= 100) {
-            cloudPercent.setText("%" + saturation++);
+        if (cloudSaturation <= 100) {
+            cloudPercent.setText("%" + cloudSaturation++);
             cloud.setFill(Color.rgb(r--, g--, b--));
         }
     }
 
     public void update() {
-        if (delayResaturation == 0) {
-            delayResaturation = 50;
-            if (saturation != 0) {
-                cloudPercent.setText("%" + saturation--);
+        // delay desaturation, otherwise cloud desaturates too fast
+        if (delayDesaturation == 0) {
+            delayDesaturation = 50;
+            // desaturates the cloud if no seeding is being done
+            if (cloudSaturation != 0) {
+                cloudPercent.setText("%" + cloudSaturation--);
                 cloud.setFill(Color.rgb(r++, g++, b++));
-                if (saturation > 30) {
-                    saturation30 = true;
+                if (cloudSaturation > 30) {
+                    cloudSaturation30 = true;
                  }
             }
         }
-        else if (delayResaturation < 51) {
-            delayResaturation--;
-            saturation30 = false;
+        else if (delayDesaturation < 51) {
+            delayDesaturation--;
+            cloudSaturation30 = false;
         }
+    }
+
+    public void resetCloud() {
+        this.getChildren().clear();
     }
 }
 class Helipad extends GameObject {
@@ -280,6 +353,10 @@ class Helipad extends GameObject {
             boundingBox.setVisible(false);
         else if (!boundingBox.isVisible())
             boundingBox.setVisible(true);
+    }
+
+    public void resetHelipad() {
+        this.getChildren().clear();
     }
 }
 
@@ -388,8 +465,14 @@ class Helicopter extends GameObject implements Updatable{
     }
 
     public Shape getBounds() { return boundingBox; }
+
+    public void resetHeli() {
+        this.getChildren().clear();
+    }
 }
 
+/* A class for any text needed for the game such as percentages and the fuel
+text for helicopter. */
 class GameText extends GameObject {
     Text text;
 
@@ -407,6 +490,11 @@ class GameText extends GameObject {
     }
 }
 
+/* At the highest level we have the class GameApp. This class extends the
+JavaFX Application class. The purpose of this class is to manage the high-level
+aspects of our application and setup and show the initial Scene for your
+application. The GameApp class sets up all keyboard event handlers to invoke
+public methods in Game.*/
 public class GameApp extends Application {
         /* CONSTANTS */
         public static final int GAME_WIDTH = 400;
@@ -416,8 +504,9 @@ public class GameApp extends Application {
 
     @Override
         public void start(Stage primaryStage) {
-
             root.setScaleY(-1); // flipping the display (screen) to avoid mirroring
+
+            root.setStyle("-fx-background-color: black;");
 
             Scene scene = new Scene(root, GAME_WIDTH, GAME_HEIGHT);
             primaryStage.setScene(scene);
@@ -447,8 +536,10 @@ public class GameApp extends Application {
                 if (e.getCode() == KeyCode.SPACE){
                     root.cloudSeeding();
                 }
-        });
-
+                if (e.getCode() == KeyCode.R) {
+                    root.resetGame();
+                }
+            });
             primaryStage.show();
         }
         public static void main(String[] args) {launch(args);}
