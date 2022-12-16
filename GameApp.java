@@ -74,6 +74,12 @@ class Game extends Pane implements Updatable {
     public void ignition() {
         helicopter.ignition();
     }
+
+    public void boundingBoxes() {
+        cloud.showCloudBounding();
+        helipad.showHelipadBounding();
+        helicopter.showHeliBounding();
+    }
 }
 
 /* GameObject class contains methods and fields that manage the common
@@ -134,6 +140,8 @@ class Pond extends GameObject {
 }
 
 class Cloud extends GameObject {
+    Rectangle boundingBox = new Rectangle();
+
     public Cloud() {
         super();
         Circle cloud = new Circle(100,100,50);
@@ -148,7 +156,6 @@ class Cloud extends GameObject {
         cloudPercent.setFill(Color.BLUE);
         add(cloudPercent);
 
-        Rectangle boundingBox = new Rectangle();
         boundingBox.setWidth(100);
         boundingBox.setHeight(100);
         boundingBox.setFill(Color.TRANSPARENT);
@@ -156,18 +163,25 @@ class Cloud extends GameObject {
                 "-fx-stroke-width: 0.5;");
         boundingBox.setTranslateX(cloud.getTranslateX() + cloud.getCenterX() - 50);
         boundingBox.setTranslateY(cloud.getTranslateY() + cloud.getCenterY() - 50);
+        boundingBox.setVisible(false);
         add(boundingBox);
-
         /*double randomX = Math.random() * (GameApp.GAME_WIDTH - cloud.getRadiusX());
         double randomY =
                 Math.random() * (GameApp.GAME_HEIGHT * 2/3 - cloud.getRadiusY());
         cloud.setCenterX(randomX);
         cloud.setCenterY(randomY);*/
+    }
 
-
+    public void showCloudBounding() {
+        if (boundingBox.isVisible())
+            boundingBox.setVisible(false);
+        else if (!boundingBox.isVisible())
+            boundingBox.setVisible(true);
     }
 }
 class Helipad extends GameObject {
+    Rectangle boundingBox = new Rectangle();
+
     public Helipad() {
         super();
         Rectangle rectangle = new Rectangle();
@@ -189,7 +203,6 @@ class Helipad extends GameObject {
         ellipse.setTranslateY(75);
         add(ellipse);
 
-        Rectangle boundingBox = new Rectangle();
         boundingBox.setWidth(100);
         boundingBox.setHeight(100);
         boundingBox.setFill(Color.TRANSPARENT);
@@ -197,9 +210,16 @@ class Helipad extends GameObject {
                 "-fx-stroke-width: 0.5;");
         boundingBox.setTranslateX(rectangle.getTranslateX() + rectangle.getWidth() - 100);
         boundingBox.setTranslateY(rectangle.getTranslateY() + rectangle.getHeight() - 100);
+        boundingBox.setVisible(false);
         add(boundingBox);
     }
 
+    public void showHelipadBounding() {
+        if (boundingBox.isVisible())
+            boundingBox.setVisible(false);
+        else if (!boundingBox.isVisible())
+            boundingBox.setVisible(true);
+    }
 }
 
 class Helicopter extends GameObject implements Updatable{
@@ -209,6 +229,7 @@ class Helicopter extends GameObject implements Updatable{
     int heading = 0;
     boolean ignition = false;
     int fuel = 25000;
+    Rectangle boundingBox = new Rectangle();
 
     public Helicopter() {
         super();
@@ -231,7 +252,6 @@ class Helicopter extends GameObject implements Updatable{
         fuelText.setFill(Color.YELLOW);
         add(fuelText);
 
-        Rectangle boundingBox = new Rectangle();
         boundingBox.setWidth(70);
         boundingBox.setHeight(70);
         boundingBox.setFill(Color.TRANSPARENT);
@@ -239,13 +259,18 @@ class Helicopter extends GameObject implements Updatable{
                 "-fx-stroke-width: 0.5;");
         boundingBox.setTranslateX(-5);
         boundingBox.setTranslateY(-5);
+        boundingBox.setVisible(false);
         add(boundingBox);
 
         this.getTransforms().clear();
         this.getTransforms().addAll(myRotate, myTranslate);
     }
-    public void boundingBoxes() {
 
+    public void showHeliBounding() {
+        if (boundingBox.isVisible())
+            boundingBox.setVisible(false);
+        else if (!boundingBox.isVisible())
+            boundingBox.setVisible(true);
     }
     public void ignition() {
         ignition =! ignition;
@@ -313,6 +338,7 @@ public class GameApp extends Application {
         public static final int GAME_HEIGHT = 800;
 
         Game root = new Game();
+
     @Override
         public void start(Stage primaryStage) {
 
@@ -339,6 +365,9 @@ public class GameApp extends Application {
                 }
                 if (e.getCode() == KeyCode.I){
                     root.ignition();
+                }
+                if (e.getCode() == KeyCode.B){
+                    root.boundingBoxes();
                 }
         });
 
