@@ -139,7 +139,7 @@ class Pond extends GameObject {
     }
 }
 
-class Cloud extends GameObject {
+class Cloud extends GameObject implements Updatable{
     Rectangle boundingBox = new Rectangle();
 
     public Cloud() {
@@ -230,6 +230,7 @@ class Helicopter extends GameObject implements Updatable{
     boolean ignition = false;
     int fuel = 25000;
     Rectangle boundingBox = new Rectangle();
+    GameText fuelText = new GameText("F:" + fuel);
 
     public Helicopter() {
         super();
@@ -246,7 +247,6 @@ class Helicopter extends GameObject implements Updatable{
         heading.setStroke(Color.YELLOW);
         add(heading);
 
-        GameText fuelText = new GameText("F:" + fuel);
         fuelText.setTranslateX(10);
         fuelText.setTranslateY(10);
         fuelText.setFill(Color.YELLOW);
@@ -299,6 +299,9 @@ class Helicopter extends GameObject implements Updatable{
             heading -= 15;
         }
     }
+    private void consumeFuel() {
+        fuel -= 1;
+    }
 
     @Override
     public void update() {
@@ -312,6 +315,12 @@ class Helicopter extends GameObject implements Updatable{
 
         this.getTransforms().clear();
         this.getTransforms().addAll(myTranslate, myRotate);
+
+        // count down fuel
+        if (ignition) {
+            this.consumeFuel();
+            fuelText.setText("F:" + fuel);
+        }
     }
 }
 
