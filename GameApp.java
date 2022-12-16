@@ -6,11 +6,7 @@ import javafx.scene.Scene;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Ellipse;
-import javafx.scene.shape.Line;
-import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Rotate;
@@ -47,6 +43,12 @@ class Game extends Pane implements Updatable {
             public void handle(long now) {
                 if (counter++ %2 == 0) {
                     helicopter.update();
+                    cloud.update();
+                    pond.update();
+
+                    if(cloud.isSaturation30()) {
+                        pond.fillPond();
+                    }
                 }
             }
         };
@@ -79,6 +81,13 @@ class Game extends Pane implements Updatable {
         cloud.showCloudBounding();
         helipad.showHelipadBounding();
         helicopter.showHeliBounding();
+    }
+
+    public void cloudSeeding() {
+        if (!Shape.intersect(helicopter.getBounds(),
+                cloud.getBounds()).getBoundsInLocal().isEmpty()) {
+            cloud.cloudSeeding();
+        }
     }
 }
 
@@ -123,34 +132,61 @@ class GameObject extends Group {
     }
 }
 
-class Pond extends GameObject {
+class Pond extends GameObject implements Updatable {
+
+    GameText pondPercent;
+    Circle pond;
+    int fill = 0;
+    int radius = 20;
+
     public Pond() {
-        Circle pond = new Circle(40,40,20);
+
+        pond = new Circle(40,40, radius);
         pond.setFill(Color.BLUE);
         pond.setTranslateX(300);
         pond.setTranslateY(400);
         add(pond);
 
-        GameText pondPercent = new GameText("0%");
+        pondPercent = new GameText("28%");
         pondPercent.setTranslateX(pond.getTranslateX() + pond.getCenterX() - 5);
         pondPercent.setTranslateY(pond.getTranslateY() + pond.getCenterY() + 5);
         pondPercent.setFill(Color.WHITE);
         add(pondPercent);
     }
+
+    public void fillPond() {
+        if (fill < 100) {
+            pondPercent.setText("%" + fill++);
+            radius++;
+        }
+    }
+
+    public void update() {
+        pondPercent.setText("%" + fill);
+        pond.setRadius(radius);
+    }
 }
 
 class Cloud extends GameObject implements Updatable{
     Rectangle boundingBox = new Rectangle();
+    Circle cloud = new Circle(100,100,50);
+    GameText cloudPercent = new GameText("0%");
+
+    int saturation = 0;
+    int delayResaturation = 0;
+    int r = 255;
+    int g = 255;
+    int b = 255;
+    boolean saturation30 = false;
 
     public Cloud() {
         super();
-        Circle cloud = new Circle(100,100,50);
-        cloud.setFill(Color.WHITE);
+
+        cloud.setFill(Color.rgb(r,g,b));
         cloud.setTranslateX(50);
         cloud.setTranslateY(500);
         add(cloud);
 
-        GameText cloudPercent = new GameText("0%");
         cloudPercent.setTranslateX(cloud.getTranslateX() + cloud.getCenterX() - 5);
         cloudPercent.setTranslateY(cloud.getTranslateY() + cloud.getCenterY() + 5);
         cloudPercent.setFill(Color.BLUE);
@@ -165,11 +201,6 @@ class Cloud extends GameObject implements Updatable{
         boundingBox.setTranslateY(cloud.getTranslateY() + cloud.getCenterY() - 50);
         boundingBox.setVisible(false);
         add(boundingBox);
-        /*double randomX = Math.random() * (GameApp.GAME_WIDTH - cloud.getRadiusX());
-        double randomY =
-                Math.random() * (GameApp.GAME_HEIGHT * 2/3 - cloud.getRadiusY());
-        cloud.setCenterX(randomX);
-        cloud.setCenterY(randomY);*/
     }
 
     public void showCloudBounding() {
@@ -177,6 +208,36 @@ class Cloud extends GameObject implements Updatable{
             boundingBox.setVisible(false);
         else if (!boundingBox.isVisible())
             boundingBox.setVisible(true);
+    }
+
+    public Shape getBounds() { return boundingBox; }
+
+    boolean isSaturation30() {
+        return saturation30;
+    }
+
+    public void cloudSeeding() {
+        if (saturation <= 100) {
+            cloudPercent.setText("%" + saturation++);
+            cloud.setFill(Color.rgb(r--, g--, b--));
+        }
+    }
+
+    public void update() {
+        if (delayResaturation == 0) {
+            delayResaturation = 50;
+            if (saturation != 0) {
+                cloudPercent.setText("%" + saturation--);
+                cloud.setFill(Color.rgb(r++, g++, b++));
+                if (saturation > 30) {
+                    saturation30 = true;
+                 }
+            }
+        }
+        else if (delayResaturation < 51) {
+            delayResaturation--;
+            saturation30 = false;
+        }
     }
 }
 class Helipad extends GameObject {
@@ -229,6 +290,7 @@ class Helicopter extends GameObject implements Updatable{
     int heading = 0;
     boolean ignition = false;
     int fuel = 25000;
+
     Rectangle boundingBox = new Rectangle();
     GameText fuelText = new GameText("F:" + fuel);
 
@@ -272,6 +334,7 @@ class Helicopter extends GameObject implements Updatable{
         else if (!boundingBox.isVisible())
             boundingBox.setVisible(true);
     }
+
     public void ignition() {
         ignition =! ignition;
     }
@@ -299,6 +362,7 @@ class Helicopter extends GameObject implements Updatable{
             heading -= 15;
         }
     }
+
     private void consumeFuel() {
         fuel -= 1;
     }
@@ -322,6 +386,8 @@ class Helicopter extends GameObject implements Updatable{
             fuelText.setText("F:" + fuel);
         }
     }
+
+    public Shape getBounds() { return boundingBox; }
 }
 
 class GameText extends GameObject {
@@ -377,6 +443,9 @@ public class GameApp extends Application {
                 }
                 if (e.getCode() == KeyCode.B){
                     root.boundingBoxes();
+                }
+                if (e.getCode() == KeyCode.SPACE){
+                    root.cloudSeeding();
                 }
         });
 
