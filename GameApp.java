@@ -6,16 +6,21 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.Shape;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
 import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
+
 
 interface Updatable {
     void update();
@@ -27,19 +32,13 @@ interface Updatable {
  */
 class Game extends Pane implements Updatable {
     Cloud cloud = new Cloud();
-
     Pond pond = new Pond();
-
     Helipad helipad = new Helipad();
-
     Helicopter helicopter = new Helicopter();
-
+    BackgroundImage backgroundImage = new BackgroundImage();
     AnimationTimer timer;
-
     int counter = 0;
-
     StringBuilder msg = new StringBuilder();
-
     Alert alert;
 
     public Game() {init();}
@@ -47,7 +46,8 @@ class Game extends Pane implements Updatable {
     public void init() {
 
         this.getChildren().clear();
-        this.getChildren().addAll(cloud, pond, helipad, helicopter);
+        this.getChildren().addAll(backgroundImage, cloud, pond, helipad,
+                helicopter);
 
         timer = new AnimationTimer() {
             @Override
@@ -77,6 +77,7 @@ class Game extends Pane implements Updatable {
     public void heliUp() {
         helicopter.up();
     }
+
     public void heliDown() {
         helicopter.down();
     }
@@ -206,7 +207,7 @@ class Pond extends GameObject implements Updatable {
     public Pond() {
         pond = new Circle(40,40, radius);
         pond.setFill(Color.BLUE);
-        pond.setTranslateX(300);
+        pond.setTranslateX(600);
         pond.setTranslateY(400);
         add(pond);
 
@@ -250,7 +251,7 @@ class Cloud extends GameObject implements Updatable{
         super();
 
         cloud.setFill(Color.rgb(r,g,b));
-        cloud.setTranslateX(5);
+        cloud.setTranslateX(100);
         cloud.setTranslateY(500);
         add(cloud);
 
@@ -324,7 +325,7 @@ class Helipad extends GameObject {
         rectangle.setFill(Color.TRANSPARENT);
         rectangle.setStyle("-fx-stroke: grey; " +
                 "-fx-stroke-width: 2;");
-        rectangle.setTranslateX(150);
+        rectangle.setTranslateX(350);
         rectangle.setTranslateY(25);
         add(rectangle);
 
@@ -333,7 +334,7 @@ class Helipad extends GameObject {
         ellipse.setRadiusY(40);
         ellipse.setFill(Color.TRANSPARENT);
         ellipse.setStyle("-fx-stroke: grey;" + "-fx-stroke-width: 2;");
-        ellipse.setTranslateX(200);
+        ellipse.setTranslateX(400);
         ellipse.setTranslateY(75);
         add(ellipse);
 
@@ -375,7 +376,7 @@ class Helicopter extends GameObject implements Updatable{
         super();
         Circle helicopter = new Circle(30, 30, 15);
         helicopter.setFill(Color.YELLOW);
-        this.translate(170, 45);
+        this.translate(370, 45);
         add(helicopter);
 
         Line heading = new Line();
@@ -490,6 +491,15 @@ class GameText extends GameObject {
     }
 }
 
+class BackgroundImage extends GameObject {
+
+    public BackgroundImage() {
+        Image background = new Image("rainmaker-background.png");
+        ImageView backgroundImageView = new ImageView(background);
+        this.getChildren().add(backgroundImageView);
+    }
+}
+
 /* At the highest level we have the class GameApp. This class extends the
 JavaFX Application class. The purpose of this class is to manage the high-level
 aspects of our application and setup and show the initial Scene for your
@@ -497,7 +507,7 @@ application. The GameApp class sets up all keyboard event handlers to invoke
 public methods in Game.*/
 public class GameApp extends Application {
         /* CONSTANTS */
-        public static final int GAME_WIDTH = 400;
+        public static final int GAME_WIDTH = 800;
         public static final int GAME_HEIGHT = 800;
 
         Game root = new Game();
