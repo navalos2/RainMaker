@@ -15,6 +15,7 @@ import javafx.scene.shape.*;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
@@ -36,7 +37,7 @@ class Game extends Pane implements Updatable {
     Helipad helipad = new Helipad();
     Helicopter helicopter = new Helicopter();
     BackgroundImage backgroundImage = new BackgroundImage();
-    HeliBody heliBody = new HeliBody();
+
     AnimationTimer timer;
     int counter = 0;
     StringBuilder msg = new StringBuilder();
@@ -48,7 +49,7 @@ class Game extends Pane implements Updatable {
 
         this.getChildren().clear();
         this.getChildren().addAll(backgroundImage, cloud, pond, helipad,
-                heliBody);
+                helicopter);
 
         timer = new AnimationTimer() {
             @Override
@@ -265,7 +266,7 @@ class Cloud extends GameObject implements Updatable{
         boundingBox.setHeight(100);
         boundingBox.setFill(Color.TRANSPARENT);
         boundingBox.setStyle("-fx-stroke: yellow; " +
-                "-fx-stroke-width: 0.5;");
+                "-fx-stroke-width: 1;");
         boundingBox.setTranslateX(cloud.getTranslateX() + cloud.getCenterX() - 50);
         boundingBox.setTranslateY(cloud.getTranslateY() + cloud.getCenterY() - 50);
         boundingBox.setVisible(false);
@@ -343,7 +344,7 @@ class Helipad extends GameObject {
         boundingBox.setHeight(100);
         boundingBox.setFill(Color.TRANSPARENT);
         boundingBox.setStyle("-fx-stroke: yellow; " +
-                "-fx-stroke-width: 0.5;");
+                "-fx-stroke-width: 1;");
         boundingBox.setTranslateX(rectangle.getTranslateX() + rectangle.getWidth() - 100);
         boundingBox.setTranslateY(rectangle.getTranslateY() + rectangle.getHeight() - 100);
         boundingBox.setVisible(false);
@@ -372,10 +373,12 @@ class Helicopter extends GameObject implements Updatable{
 
     Rectangle boundingBox = new Rectangle();
     GameText fuelText = new GameText("F:" + fuel);
+    HeliBody heliBody = new HeliBody();
+    HeliBlade heliBlade = new HeliBlade();
 
     public Helicopter() {
         super();
-        Circle helicopter = new Circle(30, 30, 15);
+        /*Circle helicopter = new Circle(30, 30, 15);
         helicopter.setFill(Color.YELLOW);
         this.translate(370, 45);
         add(helicopter);
@@ -386,20 +389,31 @@ class Helicopter extends GameObject implements Updatable{
         heading.setEndX(helicopter.getCenterX());
         heading.setEndY(helicopter.getCenterY() + 35);
         heading.setStroke(Color.YELLOW);
-        add(heading);
+        add(heading);*/
+        heliBody.setScaleX(-0.2);
+        heliBody.setScaleY(-0.2);
+        heliBody.setTranslateX(145);
+        heliBody.setTranslateY(-180);
+        add(heliBody);
 
-        fuelText.setTranslateX(10);
-        fuelText.setTranslateY(10);
+        heliBlade.setScaleX(0.4);
+        heliBlade.setScaleY(0.4);
+        heliBlade.setTranslateX(285);
+        heliBlade.setTranslateY(-10);
+        add(heliBlade);
+
+        fuelText.setTranslateX(380);
+        fuelText.setTranslateY(30);
         fuelText.setFill(Color.YELLOW);
         add(fuelText);
 
-        boundingBox.setWidth(70);
-        boundingBox.setHeight(70);
+        boundingBox.setWidth(80);
+        boundingBox.setHeight(80);
         boundingBox.setFill(Color.TRANSPARENT);
         boundingBox.setStyle("-fx-stroke: yellow; " +
-                "-fx-stroke-width: 0.5;");
-        boundingBox.setTranslateX(-5);
-        boundingBox.setTranslateY(-5);
+                "-fx-stroke-width: 1;");
+        boundingBox.setTranslateX(360);
+        boundingBox.setTranslateY(35);
         boundingBox.setVisible(false);
         add(boundingBox);
 
@@ -481,7 +495,7 @@ class GameText extends GameObject {
     public GameText(String textString) {
         text = new Text(textString);
         text.setScaleY(-1);
-        text.setFont(Font.font(12));
+        text.setFont(Font.font(String.valueOf(FontWeight.BOLD),12));
         add(text);
     }
     public GameText() {this("");}
@@ -496,11 +510,15 @@ class HeliBody extends GameObject {
     public HeliBody() {
         Image heliBody = new Image("heliBody.png");
         ImageView heliBodyImageView = new ImageView(heliBody);
-        heliBodyImageView.setScaleX(-0.2);
-        heliBodyImageView.setScaleY(-0.2);
-        heliBodyImageView.setTranslateX(145);
-        heliBodyImageView.setTranslateY(-185);
         add(heliBodyImageView);
+    }
+}
+
+class HeliBlade extends GameObject {
+    public HeliBlade() {
+        Image heliBlade = new Image("heliBlade.png");
+        ImageView heliBladeImageView = new ImageView(heliBlade);
+        add(heliBladeImageView);
     }
 }
 
