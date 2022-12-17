@@ -36,6 +36,7 @@ class Game extends Pane implements Updatable {
     Helipad helipad = new Helipad();
     Helicopter helicopter = new Helicopter();
     BackgroundImage backgroundImage = new BackgroundImage();
+    HeliBody heliBody = new HeliBody();
     AnimationTimer timer;
     int counter = 0;
     StringBuilder msg = new StringBuilder();
@@ -47,7 +48,7 @@ class Game extends Pane implements Updatable {
 
         this.getChildren().clear();
         this.getChildren().addAll(backgroundImage, cloud, pond, helipad,
-                helicopter);
+                heliBody);
 
         timer = new AnimationTimer() {
             @Override
@@ -491,12 +492,23 @@ class GameText extends GameObject {
     }
 }
 
-class BackgroundImage extends GameObject {
+class HeliBody extends GameObject {
+    public HeliBody() {
+        Image heliBody = new Image("heliBody.png");
+        ImageView heliBodyImageView = new ImageView(heliBody);
+        heliBodyImageView.setScaleX(-0.2);
+        heliBodyImageView.setScaleY(-0.2);
+        heliBodyImageView.setTranslateX(145);
+        heliBodyImageView.setTranslateY(-185);
+        add(heliBodyImageView);
+    }
+}
 
+class BackgroundImage extends GameObject {
     public BackgroundImage() {
         Image background = new Image("rainmaker-background.png");
         ImageView backgroundImageView = new ImageView(background);
-        this.getChildren().add(backgroundImageView);
+        add(backgroundImageView);
     }
 }
 
