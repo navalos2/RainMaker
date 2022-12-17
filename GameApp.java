@@ -376,8 +376,14 @@ class Helicopter extends GameObject implements Updatable{
     HeliBody heliBody = new HeliBody();
     HeliBlade heliBlade = new HeliBlade();
 
+    // state stuff
+    HeliStates state;
+    int bladeSpeed = 0;
+
     public Helicopter() {
         super();
+
+        state = new OffState(this);
         /*Circle helicopter = new Circle(30, 30, 15);
         helicopter.setFill(Color.YELLOW);
         this.translate(370, 45);
@@ -392,18 +398,17 @@ class Helicopter extends GameObject implements Updatable{
         add(heading);*/
         heliBody.setScaleX(-0.2);
         heliBody.setScaleY(-0.2);
-        heliBody.setTranslateX(145);
-        heliBody.setTranslateY(-180);
+        this.translate(145,-180);
         add(heliBody);
 
         heliBlade.setScaleX(0.4);
         heliBlade.setScaleY(0.4);
-        heliBlade.setTranslateX(285);
-        heliBlade.setTranslateY(-10);
+        heliBlade.setTranslateX(140);
+        heliBlade.setTranslateY(170);
         add(heliBlade);
 
-        fuelText.setTranslateX(380);
-        fuelText.setTranslateY(30);
+        fuelText.setTranslateX(235);
+        fuelText.setTranslateY(210);
         fuelText.setFill(Color.YELLOW);
         add(fuelText);
 
@@ -412,13 +417,13 @@ class Helicopter extends GameObject implements Updatable{
         boundingBox.setFill(Color.TRANSPARENT);
         boundingBox.setStyle("-fx-stroke: yellow; " +
                 "-fx-stroke-width: 1;");
-        boundingBox.setTranslateX(360);
-        boundingBox.setTranslateY(35);
+        boundingBox.setTranslateX(215);
+        boundingBox.setTranslateY(218);
         boundingBox.setVisible(false);
         add(boundingBox);
 
         this.getTransforms().clear();
-        this.getTransforms().addAll(myRotate, myTranslate);
+        this.getTransforms().addAll(myTranslate, myRotate);
     }
 
     public void showHeliBounding() {
@@ -429,29 +434,31 @@ class Helicopter extends GameObject implements Updatable{
     }
 
     public void ignition() {
-        ignition =! ignition;
+        state.IgnitionKey();
     }
     public void up() {
         // increases the speed by 0.1
-        if (ignition && speed < maxSpeed){
-            speed += 0.1;
+        if (state instanceof ReadyState){
+            if(speed < maxSpeed)
+                speed += 0.1;
         }
     }
     public void down() {
         // decreases the speed by 0.1
-        if (ignition && speed > minSpeed){
-            speed -= 0.1;
+        if (state instanceof ReadyState){
+            if(speed > minSpeed)
+                speed -= 0.1;
         }
     }
     public void turnLeft() {
         // changes the heading of the helicopter by 15 degrees left
-        if (ignition) {
+        if (state instanceof ReadyState) {
             heading += 15;
         }
     }
     public void turnRight() {
         // changes the heading of the helicopter by 15 degrees right
-        if (ignition) {
+        if (state instanceof ReadyState) {
             heading -= 15;
         }
     }
@@ -463,27 +470,39 @@ class Helicopter extends GameObject implements Updatable{
     @Override
     public void update() {
         // does the movement of the helicopter
+        this.rotate(heading);
+        this.getTransforms().clear();
 
         double deltaX = -speed * Math.sin(Math.toRadians(heading));
         double deltaY = speed * Math.cos(Math.toRadians(heading));
 
-        this.translate(myTranslate.getX() + deltaX, myTranslate.getY() + deltaY);
-        this.rotate(heading);
+        myTranslate.setX(myTranslate.getX() + deltaX);
+        myTranslate.setY(myTranslate.getY() + deltaY);
 
-        this.getTransforms().clear();
-        this.getTransforms().addAll(myTranslate, myRotate);
+        //translate(myTranslate.getX() + deltaX, myTranslate.getY() + deltaY);
+
+        this.getTransforms().addAll(myRotate, myTranslate);
+
+        // state stuff
+        bladeSpeed = state.UpdateHeliBlade(bladeSpeed);
+        heliBlade.update(bladeSpeed);
 
         // count down fuel
-        if (ignition) {
+        if (state instanceof ReadyState) {
             this.consumeFuel();
             fuelText.setText("F:" + fuel);
         }
+
     }
 
     public Shape getBounds() { return boundingBox; }
 
     public void resetHeli() {
         this.getChildren().clear();
+    }
+
+    public void changeState(HeliStates state) {
+        this.state = state;
     }
 }
 
@@ -515,10 +534,110 @@ class HeliBody extends GameObject {
 }
 
 class HeliBlade extends GameObject {
+    AnimationTimer timer;
+    int bladeSpeed;
+
     public HeliBlade() {
         Image heliBlade = new Image("heliBlade.png");
         ImageView heliBladeImageView = new ImageView(heliBlade);
         add(heliBladeImageView);
+
+        timer = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                HeliBlade.this.setRotate(HeliBlade.this.getRotate() + bladeSpeed);
+            }
+        };
+        timer.start();
+    }
+
+    public void update(int bladeSpeed) {
+        this.bladeSpeed = bladeSpeed;
+    }
+}
+
+abstract class HeliStates {
+    Helicopter helicopter;
+    int maxBladeSpeed = 100;
+    int delayHeliBladeStarting;
+    int delayHeliBladeStopping;
+
+    public HeliStates(Helicopter helicopter) {
+        this.helicopter = helicopter;
+    }
+
+    abstract void IgnitionKey();
+    abstract int UpdateHeliBlade(int bladeSpeed);
+
+}
+
+class OffState extends HeliStates {
+    public OffState(Helicopter helicopter) {
+        super(helicopter);
+    }
+
+    @Override
+    void IgnitionKey() {
+        helicopter.changeState(new StartingState(helicopter));
+    }
+
+    @Override
+    int UpdateHeliBlade(int bladeSpeed) {
+        return 0;
+    }
+}
+
+class StartingState extends HeliStates {
+    public StartingState(Helicopter helicopter) {
+        super(helicopter);
+    }
+
+    @Override
+    void IgnitionKey() {
+        helicopter.changeState(new StoppingState(helicopter));
+    }
+
+    @Override
+    int UpdateHeliBlade(int bladeSpeed) {
+        if (bladeSpeed < maxBladeSpeed) {
+            bladeSpeed++;
+        }
+        if (bladeSpeed == maxBladeSpeed) {
+            helicopter.changeState(new ReadyState(helicopter));
+        }
+        return bladeSpeed;
+    }
+}
+
+class StoppingState extends HeliStates{
+    public StoppingState(Helicopter helicopter) {
+        super(helicopter);
+    }
+
+    @Override
+    void IgnitionKey() {
+        helicopter.changeState(new StartingState(helicopter));
+    }
+
+    @Override
+    int UpdateHeliBlade(int bladeSpeed) {
+        return 0;
+    }
+}
+
+class ReadyState extends HeliStates{
+    public ReadyState(Helicopter helicopter) {
+        super(helicopter);
+    }
+
+    @Override
+    void IgnitionKey() {
+        helicopter.changeState(new OffState(helicopter));
+    }
+
+    @Override
+    int UpdateHeliBlade(int bladeSpeed) {
+        return maxBladeSpeed;
     }
 }
 
