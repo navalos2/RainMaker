@@ -169,30 +169,34 @@ class Game extends Pane implements Updatable {
     }
 
     public void winloseConditions() {
-        // Win Condition: IF the pond fills up to 100% AND the helicopter is
-        // within bounds of the helipad AND the ignition is off THEN you win
-        // the game.
+        boolean pondIsFull = false;
+
         for (int i = 0; i < pondLinkedList.size(); i++) {
             if (pondLinkedList.getPond(i).fill == 100
                     && (!Shape.intersect(helicopter.getBounds(),
                     helipad.getBounds()).getBoundsInLocal().isEmpty())
                     && (helicopter.state instanceof OffState)) {
-                timer.stop();
-
+                pondIsFull = true;
             }
         }
-        msg.append("You Win! Play Again?");
-        winloseWindow();
 
-            // Lose Condition: IF the helicopter fuel runs out before you can
-            // seed, fill pond, and land your helicopter, THEN you lose the game.
-            if (helicopter.fuel == 0) {
-                timer.stop();
-                msg.append("You Lose! Play Again?");
+        // Win Condition: IF the pond fills up to 100% AND the helicopter is
+        // within bounds of the helipad AND the ignition is off THEN you win
+        // the game.
+        if (pondIsFull) {
+            timer.stop();
+            msg.append("You Win! Play Again?");
 
-                winloseWindow();
-            }
+            winloseWindow();
+        }
+        // Lose Condition: IF the helicopter fuel runs out before you can
+        // seed, fill pond, and land your helicopter, THEN you lose the game.
+        if (helicopter.fuel == 0) {
+            timer.stop();
+            msg.append("You Lose! Play Again?");
 
+            winloseWindow();
+        }
     }
 }
 
@@ -550,7 +554,7 @@ class Helicopter extends GameObject implements Updatable{
     }
 
     private void consumeFuel() {
-        fuel -= 5;
+        fuel -= 3;
     }
 
     @Override
