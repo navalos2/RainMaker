@@ -35,8 +35,8 @@ interface Updatable {
  the game, win/lose conditions, instantiation and links the other Game Objects.
  */
 class Game extends Pane implements Updatable {
-    Cloud cloud = new Cloud();
-    Pond pond = new Pond();
+    //Cloud cloud = new Cloud();
+    //Pond pond = new Pond();
     Helipad helipad = new Helipad();
     Helicopter helicopter = new Helicopter();
     BackgroundImage backgroundImage = new BackgroundImage();
@@ -46,29 +46,42 @@ class Game extends Pane implements Updatable {
     StringBuilder msg = new StringBuilder();
     Alert alert;
 
+    CloudLinkedList cloudLinkedList = new CloudLinkedList();
+    PondLinkedList pondLinkedList = new PondLinkedList();
 
     public Game() {init();}
 
     public void init() {
 
         this.getChildren().clear();
-        this.getChildren().addAll(backgroundImage, cloud, pond, helipad,
+        this.getChildren().addAll(backgroundImage, cloudLinkedList, pondLinkedList,
+                helipad,
                 helicopter);
 
         timer = new AnimationTimer() {
             @Override
             public void handle(long now) {
-                if (counter++ %2 == 0) {
+                if (counter++ % 2 == 0) {
                     // call each classes update method
                     helicopter.update();
-                    cloud.update();
-                    pond.update();
                     winloseConditions();
 
                     // check to see if the cloud has reached 30% cloudSaturation.
                     // if so, fill the pond
-                    if(cloud.isCloudSaturation30()) {
-                        pond.fillPond();
+                    for (int i = 0; i < cloudLinkedList.size(); i++) {
+                        if (cloudLinkedList.getCloud(i).isCloudSaturation30()) {
+                            pondLinkedList.getPond(i).fillPond();
+                        }
+                    }
+
+                    // call update for cloud linked list
+                    for (int i = 0; i < cloudLinkedList.size(); i++) {
+                        cloudLinkedList.getCloud(i).update();
+                    }
+
+                    // call update for pond linked list
+                    for (int i = 0; i < pondLinkedList.size(); i++) {
+                        pondLinkedList.getPond(i).update();
                     }
                 }
             }
@@ -97,23 +110,28 @@ class Game extends Pane implements Updatable {
     }
 
     public void ignition() {
-        helicopter.ignition();
+        if (!Shape.intersect(helipad.getBounds(),
+                helicopter.getBounds()).getBoundsInLocal().isEmpty()) {
+            helicopter.ignition();
+        }
     }
 
     public void boundingBoxes() {
-        cloud.showCloudBounding();
+        for (int i = 0; i < cloudLinkedList.size(); i++) {
+            cloudLinkedList.getCloud(i).showCloudBounding();
+        }
         helipad.showHelipadBounding();
         helicopter.showHeliBounding();
     }
 
     public void resetGame() {
-        pond.resetPond();
-        cloud.resetCloud();
+        pondLinkedList.reset();
+        cloudLinkedList.reset();
         helicopter.resetHeli();
         helipad.resetHelipad();
 
-        cloud = new Cloud();
-        pond = new Pond();
+        cloudLinkedList = new CloudLinkedList();
+        pondLinkedList = new PondLinkedList();
         helicopter = new Helicopter();
         helipad = new Helipad();
 
@@ -122,18 +140,17 @@ class Game extends Pane implements Updatable {
 
     // check to see if cloud and helicopter intersect (same as Pong/Asteroids)
     public void cloudSeeding() {
+        for (int i = 0; i < (cloudLinkedList.size()); i++) {
+            if(!Shape.intersect(cloudLinkedList.getCloud(i).getBounds(),
+                    helicopter.getBounds()).getBoundsInLocal().isEmpty()){
+                cloudLinkedList.getCloud(i).cloudSeeding();
+            }
+        }
+        /*
         if ((helicopter.state instanceof ReadyState) && (!Shape.intersect(helicopter.getBounds(),
                 cloud.getBounds()).getBoundsInLocal().isEmpty())) {
             cloud.cloudSeeding();
-        }
-    }
-
-    // check to see if helipad and helicopter intersect.
-    public void heliOnHeliPad() {
-        if (!Shape.intersect(helipad.getBounds(),
-                helicopter.getBounds()).getBoundsInLocal().isEmpty()){
-            helicopter.isOnHelipad();
-        }
+        }*/
     }
 
     // determines win/lose conditions
@@ -152,19 +169,30 @@ class Game extends Pane implements Updatable {
     }
 
     public void winloseConditions() {
-        if (pond.fill == 100) {
-            timer.stop();
-            msg.append("You Win! Play Again?");
+        // Win Condition: IF the pond fills up to 100% AND the helicopter is
+        // within bounds of the helipad AND the ignition is off THEN you win
+        // the game.
+        for (int i = 0; i < pondLinkedList.size(); i++) {
+            if (pondLinkedList.getPond(i).fill == 100
+                    && (!Shape.intersect(helicopter.getBounds(),
+                    helipad.getBounds()).getBoundsInLocal().isEmpty())
+                    && (helicopter.state instanceof OffState)) {
+                timer.stop();
 
-            winloseWindow();
+            }
         }
+        msg.append("You Win! Play Again?");
+        winloseWindow();
 
-        if (helicopter.fuel == 0) {
-            timer.stop();
-            msg.append("You Lose! Play Again?");
+            // Lose Condition: IF the helicopter fuel runs out before you can
+            // seed, fill pond, and land your helicopter, THEN you lose the game.
+            if (helicopter.fuel == 0) {
+                timer.stop();
+                msg.append("You Lose! Play Again?");
 
-            winloseWindow();
-        }
+                winloseWindow();
+            }
+
     }
 }
 
@@ -255,6 +283,30 @@ class Pond extends GameObject implements Updatable {
     }
 }
 
+class PondLinkedList extends GameObject implements Updatable{
+    LinkedList<Pond> pondLinkedList;
+
+    public PondLinkedList() {
+        pondLinkedList = new LinkedList<>();
+
+        for (int i = 0; i < Math.random() * 3; i++) {
+            Pond pond = new Pond();
+            pondLinkedList.add(pond);
+            this.getChildren().add(pond);
+        }
+    }
+
+    public void reset() {
+        for (Pond pond: this.pondLinkedList){
+            pond.resetPond();
+        }
+    }
+
+    public Pond getPond(int i){return pondLinkedList.get(i);}
+    public int size(){return pondLinkedList.size();}
+
+}
+
 class Cloud extends GameObject implements Updatable{
     Random random = new Random();
     int radius = random.nextInt(40,60);
@@ -343,25 +395,28 @@ class Cloud extends GameObject implements Updatable{
     public void changeState(CloudStates cloudStates) { this.state = state; }
 }
 
-class CloudLinkedList extends GameObject {
-    private LinkedList<Cloud> cloudLinkedList;
+class CloudLinkedList extends GameObject implements Updatable{
+    LinkedList<Cloud> cloudLinkedList;
 
     public CloudLinkedList() {
-        for (int i = 0; i < Math.random() * 5; i++) {
+        cloudLinkedList = new LinkedList<>();
+
+        for (int i = 0; i < Math.random() * 3; i++) {
             Cloud cloud = new Cloud();
             cloudLinkedList.add(cloud);
             this.getChildren().add(cloud);
         }
     }
 
-    public void update() {
+    public void reset() {
         for (Cloud cloud: this.cloudLinkedList){
-            cloud.update();
+            cloud.resetCloud();
         }
     }
 
     public Cloud getCloud(int i){return cloudLinkedList.get(i);}
     public int size(){return cloudLinkedList.size();}
+
 }
 
 class Helipad extends GameObject {
@@ -516,6 +571,8 @@ class Helicopter extends GameObject implements Updatable{
         heliBlade.update(bladeSpeed);
 
         // count down fuel
+        // state of startingstate because heli should start consuming fuel as
+        // the heli is getting ready for take off
         if (state instanceof ReadyState) {
             this.consumeFuel();
             fuelText.setText("F:" + fuel);
@@ -524,9 +581,6 @@ class Helicopter extends GameObject implements Updatable{
     }
 
     public Shape getBounds() { return boundingBox; }
-
-    public void isOnHelipad() {
-    }
 
     public void resetHeli() {
         this.getChildren().clear();
@@ -597,8 +651,6 @@ class HeliBlade extends GameObject {
 abstract class HeliStates {
     Helicopter helicopter;
     int maxBladeSpeed = 100;
-    int delayHeliBladeStarting;
-    int delayHeliBladeStopping;
 
     public HeliStates(Helicopter helicopter) {
         this.helicopter = helicopter;
@@ -616,6 +668,7 @@ class OffState extends HeliStates {
 
     @Override
     void IgnitionKey() {
+        // if ignition on then change from off state to starting state
         helicopter.changeState(new StartingState(helicopter));
     }
 
@@ -632,17 +685,19 @@ class StartingState extends HeliStates {
 
     @Override
     void IgnitionKey() {
+        // if ignition off then change from starting state to stopping
         helicopter.changeState(new StoppingState(helicopter));
     }
 
     @Override
     int UpdateHeliBlade(int bladeSpeed) {
-        if (bladeSpeed < maxBladeSpeed) {
-            bladeSpeed++;
-        }
-        if (bladeSpeed == maxBladeSpeed) {
-            helicopter.changeState(new ReadyState(helicopter));
-        }
+            if (bladeSpeed < maxBladeSpeed) {
+                bladeSpeed++;
+            }
+            if (bladeSpeed == maxBladeSpeed) {
+                helicopter.changeState(new ReadyState(helicopter));
+            }
+
         return bladeSpeed;
     }
 }
@@ -654,12 +709,20 @@ class StoppingState extends HeliStates{
 
     @Override
     void IgnitionKey() {
+        // if ignition on then change from stopping state to starting
         helicopter.changeState(new StartingState(helicopter));
     }
 
     @Override
     int UpdateHeliBlade(int bladeSpeed) {
-        return 0;
+            if (bladeSpeed > 0) {
+                bladeSpeed--;
+            }
+            if (bladeSpeed == 0) {
+                helicopter.changeState(new OffState(helicopter));
+            }
+
+        return bladeSpeed;
     }
 }
 
@@ -670,6 +733,7 @@ class ReadyState extends HeliStates{
 
     @Override
     void IgnitionKey() {
+        // if ignition off then change ready state to off state
         helicopter.changeState(new OffState(helicopter));
     }
 
@@ -801,7 +865,6 @@ public class GameApp extends Application {
                 }
                 if (e.getCode() == KeyCode.R) {
                     root.resetGame();
-                    root.heliOnHeliPad();
                 }
             });
             primaryStage.show();
