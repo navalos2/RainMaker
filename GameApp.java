@@ -35,8 +35,6 @@ interface Updatable {
  the game, win/lose conditions, instantiation and links the other Game Objects.
  */
 class Game extends Pane implements Updatable {
-    //Cloud cloud = new Cloud();
-    //Pond pond = new Pond();
     Helipad helipad = new Helipad();
     Helicopter helicopter = new Helicopter();
     BackgroundImage backgroundImage = new BackgroundImage();
@@ -54,7 +52,10 @@ class Game extends Pane implements Updatable {
     public void init() {
 
         this.getChildren().clear();
-        this.getChildren().addAll(backgroundImage, cloudLinkedList, pondLinkedList,
+        this.getChildren().addAll(
+                backgroundImage,
+                cloudLinkedList,
+                pondLinkedList,
                 helipad,
                 helicopter);
 
@@ -110,6 +111,7 @@ class Game extends Pane implements Updatable {
     }
 
     public void ignition() {
+        // checks to see if helicopter and helipad intersect
         if (!Shape.intersect(helipad.getBounds(),
                 helicopter.getBounds()).getBoundsInLocal().isEmpty()) {
             helicopter.ignition();
@@ -125,6 +127,7 @@ class Game extends Pane implements Updatable {
     }
 
     public void resetGame() {
+        // clear each classes children then create new ones and reinitialize
         pondLinkedList.reset();
         cloudLinkedList.reset();
         helicopter.resetHeli();
@@ -138,19 +141,14 @@ class Game extends Pane implements Updatable {
         init();
     }
 
-    // check to see if cloud and helicopter intersect (same as Pong/Asteroids)
     public void cloudSeeding() {
-        for (int i = 0; i < (cloudLinkedList.size()); i++) {
+        // check to see if cloud and helicopter intersect (same as Pong/Asteroids)
+        for (int i = 0; i < cloudLinkedList.size(); i++) {
             if(!Shape.intersect(cloudLinkedList.getCloud(i).getBounds(),
                     helicopter.getBounds()).getBoundsInLocal().isEmpty()){
                 cloudLinkedList.getCloud(i).cloudSeeding();
             }
         }
-        /*
-        if ((helicopter.state instanceof ReadyState) && (!Shape.intersect(helicopter.getBounds(),
-                cloud.getBounds()).getBoundsInLocal().isEmpty())) {
-            cloud.cloudSeeding();
-        }*/
     }
 
     // determines win/lose conditions
@@ -161,7 +159,6 @@ class Game extends Pane implements Updatable {
         alert.setOnHidden(e -> {
             if (alert.getResult() == ButtonType.YES) {
                 resetGame();
-                //timer.start();
             } else
                 Platform.exit();
         });
@@ -170,31 +167,28 @@ class Game extends Pane implements Updatable {
 
     public void winloseConditions() {
         boolean pondIsFull = false;
-
-        for (int i = 0; i < pondLinkedList.size(); i++) {
-            if (pondLinkedList.getPond(i).fill == 100
-                    && (!Shape.intersect(helicopter.getBounds(),
-                    helipad.getBounds()).getBoundsInLocal().isEmpty())
-                    && (helicopter.state instanceof OffState)) {
-                pondIsFull = true;
-            }
-        }
-
         // Win Condition: IF the pond fills up to 100% AND the helicopter is
         // within bounds of the helipad AND the ignition is off THEN you win
         // the game.
-        if (pondIsFull) {
+        for (int i = 0; i < pondLinkedList.size(); i++) {
+            if (pondLinkedList.getPond(i).fill == 100
+                    && !Shape.intersect(helicopter.getBounds(),
+                    helipad.getBounds()).getBoundsInLocal().isEmpty()
+                    && helicopter.state instanceof OffState) {
+                pondIsFull = true;
+            }
+        }
+        if(pondIsFull){
             timer.stop();
             msg.append("You Win! Play Again?");
-
             winloseWindow();
         }
-        // Lose Condition: IF the helicopter fuel runs out before you can
-        // seed, fill pond, and land your helicopter, THEN you lose the game.
+        // Lose Condition: IF the heli fuel reaches zero (runs out of fuel)
+        // before you can successfully seed cloud, fill pond, and land heli
+        // THEN you lose the game.
         if (helicopter.fuel == 0) {
             timer.stop();
             msg.append("You Lose! Play Again?");
-
             winloseWindow();
         }
     }
@@ -272,7 +266,7 @@ class Pond extends GameObject implements Updatable {
 
     public void fillPond() {
         if (fill < 100) {
-            pondPercent.setText("%" + fill++);
+            pondPercent.setText("%" + (fill++));
             radius++;
         }
     }
@@ -293,6 +287,7 @@ class PondLinkedList extends GameObject implements Updatable{
     public PondLinkedList() {
         pondLinkedList = new LinkedList<>();
 
+        // randomly add 3 ponds onto the map with the same conditions
         for (int i = 0; i < Math.random() * 3; i++) {
             Pond pond = new Pond();
             pondLinkedList.add(pond);
@@ -324,8 +319,6 @@ class Cloud extends GameObject implements Updatable{
     Rectangle boundingBox = new Rectangle();
     Circle cloud = new Circle(radius);
     GameText cloudPercent = new GameText("0%");
-
-    CloudStates state;
 
     public Cloud() {
         super();
@@ -374,13 +367,15 @@ class Cloud extends GameObject implements Updatable{
     }
 
     public void update() {
-        // delay desaturation, otherwise cloud desaturates too fast
+        // delay desaturation, otherwise cloud desaturates (turns white) too
+        // fast
         if (delayDesaturation == 0) {
             delayDesaturation = 50;
             // desaturates the cloud if no seeding is being done
             if (cloudSaturation != 0) {
                 cloudPercent.setText("%" + cloudSaturation--);
                 cloud.setFill(Color.rgb(r++, g++, b++));
+                // this will be used in the animation timer
                 if (cloudSaturation > 30) {
                     cloudSaturation30 = true;
                  }
@@ -396,12 +391,12 @@ class Cloud extends GameObject implements Updatable{
         this.getChildren().clear();
     }
 
-    public void changeState(CloudStates cloudStates) { this.state = state; }
 }
 
 class CloudLinkedList extends GameObject implements Updatable{
     LinkedList<Cloud> cloudLinkedList;
 
+    // randomly add 3 clouds onto the map with the same conditions
     public CloudLinkedList() {
         cloudLinkedList = new LinkedList<>();
 
@@ -516,13 +511,13 @@ class Helicopter extends GameObject implements Updatable{
         this.getTransforms().addAll(myTranslate, myRotate);
     }
 
+    // methods regarding key events
     public void showHeliBounding() {
         if (boundingBox.isVisible())
             boundingBox.setVisible(false);
         else if (!boundingBox.isVisible())
             boundingBox.setVisible(true);
     }
-
     public void ignition() {
         state.IgnitionKey();
     }
@@ -554,7 +549,7 @@ class Helicopter extends GameObject implements Updatable{
     }
 
     private void consumeFuel() {
-        fuel -= 3;
+        fuel -= 5;
     }
 
     @Override
@@ -575,8 +570,6 @@ class Helicopter extends GameObject implements Updatable{
         heliBlade.update(bladeSpeed);
 
         // count down fuel
-        // state of startingstate because heli should start consuming fuel as
-        // the heli is getting ready for take off
         if (state instanceof ReadyState) {
             this.consumeFuel();
             fuelText.setText("F:" + fuel);
@@ -614,6 +607,8 @@ class GameText extends GameObject {
     }
 }
 
+/* A2 ADDITIONS: Add the background image class, helibody image class, and
+heliblade class. Addtionally, let's add the state classes for heli */
 class HeliBody extends GameObject {
     public HeliBody() {
         Image heliBody = new Image("heliBody.png");
@@ -637,10 +632,11 @@ class HeliBlade extends GameObject {
         heliBlade.setY(-20);
         add(heliBlade);
 
-
+        // heliblade has its own animation timer
         timer = new AnimationTimer() {
             @Override
             public void handle(long now) {
+                // set rotate to the current rotate plus the speed of the blade
                 HeliBlade.this.setRotate(HeliBlade.this.getRotate() + bladeSpeed);
             }
         };
@@ -652,6 +648,7 @@ class HeliBlade extends GameObject {
     }
 }
 
+// HeliStates
 abstract class HeliStates {
     Helicopter helicopter;
     int maxBladeSpeed = 100;
@@ -726,7 +723,7 @@ class StoppingState extends HeliStates{
                 helicopter.changeState(new OffState(helicopter));
             }
 
-        return bladeSpeed;
+        return 0;
     }
 }
 
@@ -747,72 +744,7 @@ class ReadyState extends HeliStates{
     }
 }
 
-abstract class CloudStates {
-    Cloud cloud;
-
-    public CloudStates(Cloud cloud) {
-        this.cloud = cloud;
-    }
-
-    abstract void CheckCloudState(int cloudPosition);
-
-    abstract boolean DeadCloud();
-}
-
-class AliveCloudState extends CloudStates {
-    public AliveCloudState(Cloud cloud) {
-        super(cloud);
-    }
-
-    @Override
-    void CheckCloudState(int cloudPosition) {
-
-    }
-
-    @Override
-    boolean DeadCloud() {
-        return false;
-    }
-
-    public void ifCloudExitsRight() {
-        if (cloud.getTranslateX() > GameApp.GAME_WIDTH){
-            cloud.changeState(new DeadCloudState(cloud));
-        }
-    }
-}
-
-class DeadCloudState extends CloudStates{
-    public DeadCloudState(Cloud cloud) {
-        super(cloud);
-    }
-
-    @Override
-    void CheckCloudState(int cloudPosition) {
-
-    }
-
-    @Override
-    boolean DeadCloud() {
-        return false;
-    }
-}
-
-class IsVisibleCloudState extends CloudStates {
-    public IsVisibleCloudState(Cloud cloud) {
-        super(cloud);
-    }
-
-    @Override
-    void CheckCloudState(int cloudPosition) {
-
-    }
-
-    @Override
-    boolean DeadCloud() {
-        return false;
-    }
-}
-
+// Background Image
 class BackgroundImage extends GameObject {
     public BackgroundImage() {
         Image background = new Image("rainmaker-background.png");
@@ -839,12 +771,13 @@ public class GameApp extends Application {
 
             root.setStyle("-fx-background-color: black;");
 
+            // Setting the Scene
             Scene scene = new Scene(root, GAME_WIDTH, GAME_HEIGHT);
             primaryStage.setScene(scene);
             primaryStage.setTitle("Rain Maker - Nataly Avalos");
             scene.setFill(Color.BLACK);
 
-
+            // Key Events
             scene.setOnKeyPressed(e -> {
                 if (e.getCode() == KeyCode.UP){
                     root.heliUp();
